@@ -7,6 +7,9 @@ __pycache__/
 
 # Generated logs and render/build artifacts.
 artifacts/
+spark-warehouse/
+metastore_db/
+derby.log
 
 # Office temporary lock files.
 ~$*

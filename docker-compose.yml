@@ -1,0 +1,56 @@
+services:
+  spark-hadoop:
+    build:
+      context: .
+      dockerfile: infra/docker/spark-lite/Dockerfile
+    container_name: movie-spark-hadoop
+    restart: unless-stopped
+    environment:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: movie_analysis
+      MYSQL_USER: movie
+      MYSQL_PASSWORD: movie123456
+      HDFS_LOCAL_ROOT: /workspace/.hdfs
+      HDFS_DFS_INPUT_DIR: /movie/input
+      HDFS_DFS_STREAM_INPUT_DIR: /movie/stream/input
+      HDFS_DFS_STREAM_CHECKPOINT_DIR: /movie/checkpoints/rating_trend
+      HDFS_INPUT_DIR: file:///workspace/.hdfs/movie/input
+      HDFS_STREAM_INPUT_DIR: file:///workspace/.hdfs/movie/stream/input
+      HDFS_STREAM_CHECKPOINT_DIR: file:///workspace/.hdfs/movie/checkpoints/rating_trend
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+      - "9870:9870"
+      - "4040:4040"
+    volumes:
+      - .:/workspace
+      - hadoop_data:/tmp/hadoop-root
+      - mysql_data:/var/lib/mysql
+    working_dir: /workspace
+    command: ["/workspace/infra/docker/spark-lite/entrypoint.sh"]
+
+  web:
+    build:
+      context: ./src/web
+    container_name: movie-web
+    restart: unless-stopped
+    depends_on:
+      - spark-hadoop
+    environment:
+      MYSQL_HOST: spark-hadoop
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: movie_analysis
+      MYSQL_USER: movie
+      MYSQL_PASSWORD: movie123456
+      TZ: Asia/Shanghai
+    ports:
+      - "5001:5000"
+    volumes:
+      - .:/workspace
+    working_dir: /workspace/src/web
+    command: ["python", "app.py"]
+
+volumes:
+  mysql_data:
+  hadoop_data:
