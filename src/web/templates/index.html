@@ -8,31 +8,47 @@
     <script src="/static/vendor/echarts.min.js"></script>
   </head>
   <body>
+    <a class="skip-link" href="#dashboard">跳到数据看板</a>
     <header class="topbar">
-      <div>
-        <p class="eyebrow">Spark / Hadoop / MySQL</p>
-        <h1>电影数据离线分析系统</h1>
+      <div class="topbar-inner">
+        <div class="title-group">
+          <p class="eyebrow">Spark 电影数据实验</p>
+          <h1>离线分析与实时评分看板</h1>
+          <p class="subtitle">HDFS 原始数据经过 Spark RDD、Spark SQL 与 Streaming 处理后写入 MySQL，前端读取聚合结果进行展示。</p>
+        </div>
+        <div class="system-strip" aria-label="系统链路">
+          <span>HDFS</span>
+          <span>Spark</span>
+          <span>MySQL</span>
+          <span>ECharts</span>
+        </div>
+        <button id="refreshButton" class="refresh-button" type="button" aria-label="刷新仪表盘数据">
+          刷新数据
+        </button>
       </div>
-      <button id="refreshButton" class="refresh-button" type="button" aria-label="刷新仪表盘数据">刷新数据</button>
     </header>
 
-    <main class="dashboard">
+    <main id="dashboard" class="dashboard">
       <section class="metrics" aria-label="数据概览">
-        <article class="metric">
+        <article class="metric" data-variant="catalog">
           <span class="metric-label">电影数量</span>
           <strong id="metricMovies">-</strong>
+          <span class="metric-hint">MovieLens movies</span>
         </article>
-        <article class="metric">
+        <article class="metric" data-variant="rating">
           <span class="metric-label">评分记录</span>
           <strong id="metricRatings">-</strong>
+          <span class="metric-hint">RDD 统计输入</span>
         </article>
-        <article class="metric">
+        <article class="metric" data-variant="user">
           <span class="metric-label">用户样本</span>
           <strong id="metricUsers">-</strong>
+          <span class="metric-hint">SQL 关联维度</span>
         </article>
-        <article class="metric accent">
+        <article class="metric" data-variant="genre">
           <span class="metric-label">类型维度</span>
           <strong id="metricGenres">-</strong>
+          <span class="metric-hint">genres explode</span>
         </article>
       </section>
 
@@ -41,8 +57,9 @@
           <div class="panel-header">
             <div>
               <h2>平均评分最高前 20 部电影</h2>
-              <p>RDD 读取 HDFS 中的评分与电影信息，按平均分排序。</p>
+              <p>RDD 从 HDFS 读取评分与电影信息，按 movieId 聚合平均分并排序。</p>
             </div>
+            <span class="panel-tag">RDD</span>
           </div>
           <div id="topMoviesChart" class="chart" role="img" aria-label="平均评分最高前二十电影柱状图"></div>
         </article>
@@ -51,8 +68,9 @@
           <div class="panel-header">
             <div>
               <h2>男女关注电影类型</h2>
-              <p>Spark SQL 关联 MySQL 中的用户、评分与电影类型。</p>
+              <p>Spark SQL 关联用户、评分与电影类型，统计不同性别的类型关注量。</p>
             </div>
+            <span class="panel-tag">SQL</span>
           </div>
           <div id="genderChart" class="chart" role="img" aria-label="男女电影类型关注人数柱状图"></div>
           <div id="topGenreNote" class="note"></div>
@@ -62,8 +80,9 @@
           <div class="panel-header">
             <div>
               <h2>实时评分趋势</h2>
-              <p>Spark Streaming 分批接收评分文件，页面自动轮询。</p>
+              <p>Spark Streaming 按批次处理增量评分，前端持续读取批次结果。</p>
             </div>
+            <span class="panel-tag live">Streaming</span>
           </div>
           <div id="streamChart" class="chart" role="img" aria-label="评分流式统计折线图"></div>
         </article>
@@ -73,8 +92,9 @@
         <div class="panel-header">
           <div>
             <h2>Top 20 明细</h2>
-            <p>用于报告截图和结果核对。</p>
+            <p>与柱状图使用同一份聚合结果，便于截图和结果核对。</p>
           </div>
+          <span class="panel-tag">Result</span>
         </div>
         <div class="table-wrap">
           <table>

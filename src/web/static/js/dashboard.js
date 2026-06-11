@@ -5,6 +5,16 @@ const charts = {
 };
 
 const numberFormat = new Intl.NumberFormat("zh-CN");
+const chartPalette = {
+  accent: "#2855b8",
+  teal: "#117c76",
+  amber: "#b87905",
+  red: "#b33a38",
+  ink: "#111827",
+  muted: "#687386",
+  line: "#d8e0ea",
+  surface: "#ffffff",
+};
 
 async function fetchJson(url) {
   const response = await fetch(url, { cache: "no-store" });
@@ -13,6 +23,10 @@ async function fetchJson(url) {
     throw new Error(payload.error || `请求失败: ${url}`);
   }
   return payload;
+}
+
+function isCompactChart(id) {
+  return document.getElementById(id).clientWidth < 520;
 }
 
 function setMetric(id, value) {
@@ -35,24 +49,32 @@ async function loadTopMovies() {
   const rows = payload.data;
   const titles = rows.map((row) => `${row.rank_no}. ${row.title}`);
   const values = rows.map((row) => Number(row.avg_rating));
+  const compact = isCompactChart("topMoviesChart");
 
   charts.topMovies.setOption({
-    color: ["#1e40af"],
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    grid: { top: 8, right: 24, bottom: 8, left: 180, containLabel: true },
+    color: [chartPalette.accent],
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      backgroundColor: chartPalette.surface,
+      borderColor: chartPalette.line,
+      textStyle: { color: chartPalette.ink },
+    },
+    grid: { top: 8, right: compact ? 10 : 34, bottom: 8, left: compact ? 6 : 216, containLabel: true },
     xAxis: {
       type: "value",
       min: 0,
       max: 5,
-      axisLabel: { color: "#475569" },
-      splitLine: { lineStyle: { color: "#e2e8f0" } },
+      axisLabel: { color: chartPalette.muted },
+      splitLine: { lineStyle: { color: chartPalette.line } },
     },
     yAxis: {
       type: "category",
       data: titles.reverse(),
       axisLabel: {
-        color: "#334155",
-        width: 220,
+        color: chartPalette.ink,
+        width: compact ? 136 : 260,
+        fontSize: compact ? 10 : 12,
         overflow: "truncate",
       },
     },
@@ -64,9 +86,9 @@ async function loadTopMovies() {
         barWidth: 16,
         itemStyle: { borderRadius: [0, 4, 4, 0] },
         label: {
-          show: true,
+          show: !compact,
           position: "right",
-          color: "#172033",
+          color: chartPalette.ink,
           formatter: ({ value }) => Number(value).toFixed(2),
         },
       },
@@ -99,21 +121,28 @@ async function loadGenderGenres() {
     const row = payload.data.find((item) => item.genre === genre && item.gender === "M");
     return row ? Number(row.attention_count) : 0;
   });
+  const compact = isCompactChart("genderChart");
 
   charts.gender.setOption({
-    color: ["#0f766e", "#f59e0b"],
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: { top: 0, textStyle: { color: "#475569" } },
-    grid: { top: 44, right: 18, bottom: 64, left: 54, containLabel: true },
+    color: [chartPalette.teal, chartPalette.amber],
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      backgroundColor: chartPalette.surface,
+      borderColor: chartPalette.line,
+      textStyle: { color: chartPalette.ink },
+    },
+    legend: { top: 0, textStyle: { color: chartPalette.muted } },
+    grid: { top: 44, right: 12, bottom: compact ? 86 : 64, left: compact ? 36 : 54, containLabel: true },
     xAxis: {
       type: "category",
       data: genres,
-      axisLabel: { rotate: 45, color: "#475569" },
+      axisLabel: { rotate: 45, color: chartPalette.muted, fontSize: compact ? 10 : 12 },
     },
     yAxis: {
       type: "value",
-      axisLabel: { color: "#475569" },
-      splitLine: { lineStyle: { color: "#e2e8f0" } },
+      axisLabel: { color: chartPalette.muted },
+      splitLine: { lineStyle: { color: chartPalette.line } },
     },
     series: [
       { name: "女性", type: "bar", data: female, barGap: 0, itemStyle: { borderRadius: [4, 4, 0, 0] } },
@@ -129,15 +158,21 @@ async function loadGenderGenres() {
 async function loadStreamTrend() {
   const payload = await fetchJson("/api/stream-trend");
   const rows = payload.data;
+  const compact = isCompactChart("streamChart");
   charts.stream.setOption({
-    color: ["#1e40af", "#b91c1c"],
-    tooltip: { trigger: "axis" },
-    legend: { top: 0, textStyle: { color: "#475569" } },
-    grid: { top: 44, right: 20, bottom: 36, left: 58, containLabel: true },
+    color: [chartPalette.accent, chartPalette.red],
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: chartPalette.surface,
+      borderColor: chartPalette.line,
+      textStyle: { color: chartPalette.ink },
+    },
+    legend: { top: 0, textStyle: { color: chartPalette.muted } },
+    grid: { top: 44, right: compact ? 8 : 20, bottom: 36, left: compact ? 38 : 58, containLabel: true },
     xAxis: {
       type: "category",
       data: rows.map((row) => row.batch_time || `批次${row.batch_id}`),
-      axisLabel: { color: "#475569" },
+      axisLabel: { color: chartPalette.muted, hideOverlap: true, fontSize: compact ? 10 : 12 },
     },
     yAxis: [
       {
@@ -145,13 +180,13 @@ async function loadStreamTrend() {
         name: "平均分",
         min: 0,
         max: 5,
-        axisLabel: { color: "#475569" },
-        splitLine: { lineStyle: { color: "#e2e8f0" } },
+        axisLabel: { color: chartPalette.muted },
+        splitLine: { lineStyle: { color: chartPalette.line } },
       },
       {
         type: "value",
         name: "记录数",
-        axisLabel: { color: "#475569" },
+        axisLabel: { color: chartPalette.muted },
       },
     ],
     series: [
@@ -190,9 +225,12 @@ async function refreshDashboard() {
 
 window.addEventListener("resize", () => {
   Object.values(charts).forEach((chart) => chart.resize());
+  clearTimeout(window.dashboardResizeTimer);
+  window.dashboardResizeTimer = setTimeout(() => {
+    Promise.all([loadTopMovies(), loadGenderGenres(), loadStreamTrend()]).catch(console.error);
+  }, 180);
 });
 
 document.getElementById("refreshButton").addEventListener("click", refreshDashboard);
 refreshDashboard();
 setInterval(loadStreamTrend, 6000);
-
