@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="${HDFS_LOCAL_ROOT:-/workspace/.hdfs}"
+
+if [ "${1:-}" = "dfs" ]; then
+  shift
+fi
+
+cmd="${1:-}"
+shift || true
+
+map_path() {
+  local value="$1"
+  if [[ "${value}" == file://* ]]; then
+    echo "${value#file://}"
+  elif [[ "${value}" == /* ]]; then
+    echo "${ROOT}${value}"
+  else
+    echo "${value}"
+  fi
+}
+
+case "${cmd}" in
+  -mkdir)
+    args=("$@")
+    for value in "${args[@]}"; do
+      if [[ "${value}" == -* ]]; then
+        continue
+      fi
+      mkdir -p "$(map_path "${value}")"
+    done
+    ;;
+  -put)
+    force=0
+    src=""
+    dest=""
+    for value in "$@"; do
+      if [ "${value}" = "-f" ]; then
+        force=1
+        continue
+      fi
+      if [ -z "${src}" ]; then
+        src="${value}"
+      else
+        dest="${value}"
+      fi
+    done
+    if [ -z "${src}" ] || [ -z "${dest}" ]; then
+      echo "hdfs dfs -put requires source and destination" >&2
+      exit 1
+    fi
+    mapped_dest="$(map_path "${dest}")"
+    mkdir -p "$(dirname "${mapped_dest}")"
+    if [ -d "${mapped_dest}" ]; then
+      mapped_dest="${mapped_dest}/$(basename "${src}")"
+    fi
+    if [ "${force}" = "1" ]; then
+      cp -f "${src}" "${mapped_dest}"
+    else
+      cp "${src}" "${mapped_dest}"
+    fi
+    ;;
+  -ls)
+    target="$(map_path "${1:-/}")"
+    if [ -d "${target}" ]; then
+      find "${target}" -maxdepth 1 -mindepth 1 -print | sort | while read -r item; do
+        size=$(stat -c%s "${item}" 2>/dev/null || stat -f%z "${item}")
+        printf "%12s %s\n" "${size}" "${item#${ROOT}}"
+      done
+    else
+      ls -lh "${target}"
+    fi
+    ;;
+  -rm)
+    for value in "$@"; do
+      if [[ "${value}" == -* ]]; then
+        continue
+      fi
+      rm -rf "$(map_path "${value}")"
+    done
+    ;;
+  -cat|-text)
+    for value in "$@"; do
+      cat "$(map_path "${value}")"
+    done
+    ;;
+  dfsadmin)
+    echo "Safe mode is OFF"
+    ;;
+  *)
+    echo "Unsupported lightweight hdfs command: ${cmd}" >&2
+    exit 2
+    ;;
+esac
+

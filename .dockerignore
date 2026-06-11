@@ -1,0 +1,14 @@
+data/
+docs/
+artifacts/
+*.docx
+*.pptx
+*.rar
+*.tmp
+~$*
+.DS_Store
+__pycache__/
+*.pyc
+
+
+.hdfs/

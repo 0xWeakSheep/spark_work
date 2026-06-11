@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>电影数据离线分析系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <script src="/static/vendor/echarts.min.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Spark / Hadoop / MySQL</p>
+        <h1>电影数据离线分析系统</h1>
+      </div>
+      <button id="refreshButton" class="refresh-button" type="button" aria-label="刷新仪表盘数据">刷新数据</button>
+    </header>
+
+    <main class="dashboard">
+      <section class="metrics" aria-label="数据概览">
+        <article class="metric">
+          <span class="metric-label">电影数量</span>
+          <strong id="metricMovies">-</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-label">评分记录</span>
+          <strong id="metricRatings">-</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-label">用户样本</span>
+          <strong id="metricUsers">-</strong>
+        </article>
+        <article class="metric accent">
+          <span class="metric-label">类型维度</span>
+          <strong id="metricGenres">-</strong>
+        </article>
+      </section>
+
+      <section class="grid">
+        <article class="panel wide">
+          <div class="panel-header">
+            <div>
+              <h2>平均评分最高前 20 部电影</h2>
+              <p>RDD 读取 HDFS 中的评分与电影信息，按平均分排序。</p>
+            </div>
+          </div>
+          <div id="topMoviesChart" class="chart" role="img" aria-label="平均评分最高前二十电影柱状图"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>男女关注电影类型</h2>
+              <p>Spark SQL 关联 MySQL 中的用户、评分与电影类型。</p>
+            </div>
+          </div>
+          <div id="genderChart" class="chart" role="img" aria-label="男女电影类型关注人数柱状图"></div>
+          <div id="topGenreNote" class="note"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>实时评分趋势</h2>
+              <p>Spark Streaming 分批接收评分文件，页面自动轮询。</p>
+            </div>
+          </div>
+          <div id="streamChart" class="chart" role="img" aria-label="评分流式统计折线图"></div>
+        </article>
+      </section>
+
+      <section class="table-section">
+        <div class="panel-header">
+          <div>
+            <h2>Top 20 明细</h2>
+            <p>用于报告截图和结果核对。</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>电影</th>
+                <th>平均分</th>
+                <th>评分次数</th>
+              </tr>
+            </thead>
+            <tbody id="topMovieRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  </body>
+</html>
